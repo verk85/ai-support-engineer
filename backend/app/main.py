@@ -1,3 +1,4 @@
+import requests
 from fastapi import FastAPI
 from pydantic import BaseModel
 from app.config import settings
@@ -14,6 +15,11 @@ async def root():
 @app.get("/health")
 async def health_check():
     return {"status": "healthy"}
+
+@app.get("/qdrant/health")
+async def qdrant_health_check():
+    response = requests.get(f"{settings.QDRANT_URL}/healthz")
+    return {"qdrant_status": response.text}
 
 @app.post("/chat")
 def chat(req: ChatRequest):
