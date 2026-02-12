@@ -23,10 +23,10 @@ cd backend
 uvicorn app.main:app --host 0.0.0.0 --port 8000
 ```
 
-### Docker build and run
+### Docker Compose (preferred)
 ```bash
-docker build -t ai-support-engineer backend/
-docker run -p 8000:8000 ai-support-engineer
+docker compose up -d --build
+docker compose down
 ```
 
 ### Setting up the Python environment
@@ -42,12 +42,15 @@ pip install -r requirements.txt
 ## Architecture Notes
 
 - **FastAPI app** is created in `backend/app/main.py` and served via Uvicorn on port 8000.
-- **Configuration** uses `pydantic_settings.BaseSettings` in `config.py`. Settings are case-sensitive and importable as `from app.config import settings`.
+- **Configuration** uses `pydantic_settings.BaseSettings` with `SettingsConfigDict` in `config.py`. Settings are case-sensitive, loaded from environment variables and `.env` file, and importable as `from app.config import settings`.
+- **Secrets** — `OPENAI_API_KEY` is loaded from `.env` (gitignored) and passed to the backend container via `env_file` in `docker-compose.yml`. Never expose secrets in code or API responses.
+- **Qdrant** — vector database running as a Docker Compose service, accessible at `http://qdrant:6333` from the backend container and `http://localhost:6333` from the host.
 - **Request/response models** use Pydantic `BaseModel` (e.g., `ChatRequest`).
-- Current endpoints: `GET /` (welcome), `GET /health` (health check), `POST /chat` (echo-style chat placeholder).
+- Current endpoints: `GET /` (welcome), `GET /health` (health check), `GET /qdrant/health` (Qdrant health check), `GET /config` (project settings), `POST /chat` (echo-style chat placeholder).
 
 ## Conventions
 
 - Commit messages are prefixed with `[MAJOR]` or `[MINOR]` to indicate scope of changes.
-- Dependencies are managed via `backend/requirements.txt` (no pyproject.toml).
+- Dependencies are managed via `backend/requirements.txt` (no pyproject.toml, no version pins).
 - The Dockerfile uses `python:3.12-slim` as the base image.
+- All Docker ports are bound to `127.0.0.1` (localhost only).
